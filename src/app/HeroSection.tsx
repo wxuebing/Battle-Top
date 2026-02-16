@@ -32,7 +32,7 @@ export function HeroSection() {
 
   return (
     <section className="relative overflow-hidden bg-gradient-to-br from-primary-50 via-white to-accent-50">
-      <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
+      <div className="absolute inset-0 bg-grid-pattern opacity-5 pointer-events-none"></div>
       <div className="container mx-auto px-4 py-12 md:py-16 lg:py-24">
         <div className="max-w-3xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 bg-gradient-to-r from-primary-100 to-accent-100 rounded-full text-primary-700 text-xs md:text-sm font-medium mb-4 md:mb-6">
