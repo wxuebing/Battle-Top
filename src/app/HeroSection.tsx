@@ -54,14 +54,14 @@ export function HeroSection() {
           <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center">
             <Link
               href="/create"
-              className="inline-flex items-center justify-center rounded-lg font-medium transition-colors h-12 px-6 text-base bg-gradient-to-r from-primary-600 to-accent-500 text-white hover:opacity-90"
+              className="inline-flex items-center justify-center rounded-lg font-medium h-12 px-6 text-base bg-gradient-to-r from-primary-600 to-accent-500 text-white shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer"
             >
               创建榜单
               <ArrowRight className="ml-2 h-5 w-5" />
             </Link>
             <Link
               href="/explore"
-              className="inline-flex items-center justify-center rounded-lg font-medium transition-colors h-12 px-6 text-base border border-gray-300 bg-transparent hover:bg-gray-50"
+              className="inline-flex items-center justify-center rounded-lg font-medium h-12 px-6 text-base border-2 border-primary-500 text-primary-600 bg-white hover:bg-primary-50 hover:border-primary-600 hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer"
             >
               浏览榜单
             </Link>
