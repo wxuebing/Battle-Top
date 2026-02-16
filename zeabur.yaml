@@ -1,0 +1,8 @@
+services:
+  - name: battle-top
+    type: web
+    buildCommand: npm run build
+    startCommand: npm run start
+    installCommand: npm install
+    env:
+      NODE_ENV: production
