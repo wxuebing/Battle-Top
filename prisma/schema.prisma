@@ -1,0 +1,561 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?
+  emailVerified DateTime?
+  phone         String?
+  phoneVerified Boolean  @default(false)
+  password      String?
+  image         String?
+  bio           String?
+  
+  role          String   @default("user")
+  
+  credibilityScore Int     @default(0)
+  isAuthoritative Boolean @default(false)
+  totalLikesReceived Int   @default(0)
+  totalRankingsPublished Int @default(0)
+  
+  title           String?
+  imageSource     String   @default("default")
+  
+  realName        String?
+  idCardNumber    String?
+  idCardVerified  Boolean  @default(false)
+  idCardSubmittedAt DateTime?
+  idCardVerifiedAt DateTime?
+  
+  website         String?
+  weibo           String?
+  twitter         String?
+  github          String?
+  
+  battleWins      Int      @default(0)
+  battleLosses    Int      @default(0)
+  mvpCount        Int      @default(0)
+  
+  level           Int      @default(1)
+  exp             Int      @default(0)
+  totalRecharged  Int      @default(0)
+  chatFrame       String   @default("bronze")
+  nameStyle       String   @default("default")
+  
+  dailyStreak     Int      @default(0)
+  lastDailyAt     DateTime?
+  
+  securityQuestion  String?
+  securityAnswer    String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  rankings     Ranking[]
+  likes        Like[]
+  comments     Comment[]
+  commentLikes CommentLike[]
+  notifications Notification[]
+  accounts     Account[]
+  sessions     Session[]
+  
+  subscribers      Subscription[]  @relation("UserSubscribers")
+  subscriptions    Subscription[]  @relation("UserSubscriptions")
+  
+  donationsFrom  Donation[]  @relation("DonationFrom")
+  donationsTo    Donation[]  @relation("DonationTo")
+  
+  wallet         Wallet?
+  vipMembership  VIPMembership?
+  userItems      UserItem[]
+  transactions   Transaction[]
+  
+  collaborations RankingCollaborator[]
+  debatesAsCreator Debate[] @relation("DebateCreator")
+  debatesAsChallenger Debate[] @relation("DebateChallenger")
+  debateVotes    DebateVote[]
+  dailyTasks     UserDailyTask[]
+  achievements   UserAchievement[]
+  
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+model SmsCode {
+  id        String   @id @default(cuid())
+  phone     String
+  code      String
+  purpose   String
+  used      Boolean  @default(false)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@map("sms_codes")
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  type        String   @default("CUSTOM")
+  description String?
+  icon        String?
+  color       String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  rankings Ranking[]
+  tags     Tag[]
+  
+  @@map("categories")
+}
+
+model Tag {
+  id         String   @id @default(cuid())
+  name       String   @unique
+  categoryId String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  category Category?  @relation(fields: [categoryId], references: [id])
+  rankingTags RankingTag[]
+  
+  @@map("tags")
+}
+
+model Ranking {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  status      String   @default("DRAFT")
+  
+  authorId    String
+  categoryId  String?
+  
+  viewCount   Int      @default(0)
+  likeCount   Int      @default(0)
+  commentCount Int     @default(0)
+  
+  isCollaborative Boolean @default(false)
+  
+  rejectionReason String?
+  reviewedAt      DateTime?
+  reviewedBy      String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  publishedAt DateTime?
+  
+  author     User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  category   Category?  @relation(fields: [categoryId], references: [id])
+  items      RankingItem[]
+  likes      Like[]
+  comments   Comment[]
+  rankingTags RankingTag[]
+  donations  Donation[]
+  collaborators RankingCollaborator[]
+  
+  @@index([status])
+  @@index([categoryId])
+  @@index([authorId])
+  @@map("rankings")
+}
+
+model RankingItem {
+  id          String  @id @default(cuid())
+  rankingId   String
+  name        String
+  description String?
+  imageUrl    String?
+  position    Int
+  justification String?
+  metadata    String?
+  addedBy     String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  ranking Ranking @relation(fields: [rankingId], references: [id], onDelete: Cascade)
+  
+  @@unique([rankingId, position])
+  @@index([rankingId])
+  @@map("ranking_items")
+}
+
+model RankingCollaborator {
+  id          String   @id @default(cuid())
+  rankingId   String
+  userId      String
+  role        String   @default("editor")
+  invitedBy   String
+  acceptedAt  DateTime?
+  
+  createdAt DateTime @default(now())
+  
+  ranking Ranking @relation(fields: [rankingId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([rankingId, userId])
+  @@map("ranking_collaborators")
+}
+
+model Like {
+  id        String   @id @default(cuid())
+  userId    String
+  rankingId String
+  
+  createdAt DateTime @default(now())
+  
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ranking Ranking @relation(fields: [rankingId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, rankingId])
+  @@index([rankingId])
+  @@map("likes")
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  content   String
+  userId    String
+  rankingId String
+  parentId  String?
+  
+  likeCount Int      @default(0)
+  replyCount Int     @default(0)
+  isMVP     Boolean  @default(false)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ranking Ranking @relation(fields: [rankingId], references: [id], onDelete: Cascade)
+  parent  Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies Comment[] @relation("CommentReplies")
+  likes   CommentLike[]
+  
+  @@index([rankingId])
+  @@index([parentId])
+  @@map("comments")
+}
+
+model CommentLike {
+  id        String   @id @default(cuid())
+  userId    String
+  commentId String
+  
+  createdAt DateTime @default(now())
+  
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comment Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, commentId])
+  @@index([commentId])
+  @@map("comment_likes")
+}
+
+model RankingTag {
+  rankingId String
+  tagId    String
+  
+  createdAt DateTime @default(now())
+  
+  ranking Ranking @relation(fields: [rankingId], references: [id], onDelete: Cascade)
+  tag    Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  
+  @@id([rankingId, tagId])
+  @@map("ranking_tags")
+}
+
+model Notification {
+  id          String   @id @default(cuid())
+  userId      String
+  type        String
+  title       String
+  message     String
+  read        Boolean  @default(false)
+  data        String?
+  
+  createdAt DateTime @default(now())
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@map("notifications")
+}
+
+model Subscription {
+  id              String   @id @default(cuid())
+  subscriberId    String
+  subscribedToId  String
+  
+  createdAt DateTime @default(now())
+  
+  subscriber   User  @relation("UserSubscriptions", fields: [subscriberId], references: [id], onDelete: Cascade)
+  subscribedTo User  @relation("UserSubscribers", fields: [subscribedToId], references: [id], onDelete: Cascade)
+  
+  @@unique([subscriberId, subscribedToId])
+  @@index([subscriberId])
+  @@index([subscribedToId])
+  @@map("subscriptions")
+}
+
+model Donation {
+  id          String   @id @default(cuid())
+  fromUserId  String
+  toUserId    String
+  rankingId   String?
+  amount      Float
+  message     String?
+  status      String   @default("pending")
+  
+  createdAt DateTime @default(now())
+  
+  fromUser User @relation("DonationFrom", fields: [fromUserId], references: [id], onDelete: Cascade)
+  toUser   User @relation("DonationTo", fields: [toUserId], references: [id], onDelete: Cascade)
+  ranking  Ranking? @relation(fields: [rankingId], references: [id], onDelete: SetNull)
+  
+  @@index([fromUserId])
+  @@index([toUserId])
+  @@map("donations")
+}
+
+model Wallet {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  balance         Int      @default(0)
+  totalRecharged  Int      @default(0)
+  totalSpent      Int      @default(0)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("wallets")
+}
+
+model VIPMembership {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  type        String
+  startDate   DateTime
+  endDate     DateTime
+  isActive    Boolean  @default(true)
+  autoRenew   Boolean  @default(false)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("vip_memberships")
+}
+
+model Item {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  price       Int
+  icon        String?
+  type        String
+  effect      String?
+  isActive    Boolean  @default(true)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  userItems UserItem[]
+  
+  @@map("items")
+}
+
+model UserItem {
+  id          String   @id @default(cuid())
+  userId      String
+  itemId      String
+  quantity    Int      @default(1)
+  
+  purchasedAt DateTime @default(now())
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, itemId])
+  @@map("user_items")
+}
+
+model Transaction {
+  id          String   @id @default(cuid())
+  userId      String
+  type        String
+  amount      Int
+  description String?
+  relatedId   String?
+  
+  createdAt DateTime @default(now())
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@map("transactions")
+}
+
+model Debate {
+  id              String   @id @default(cuid())
+  title           String
+  description     String?
+  
+  creatorId       String
+  creatorRankingId String
+  challengerId    String?
+  challengerRankingId String?
+  
+  status          String   @default("open")
+  
+  creatorVotes    Int      @default(0)
+  challengerVotes Int      @default(0)
+  
+  winnerId        String?
+  reward          Int      @default(0)
+  
+  startedAt       DateTime?
+  endedAt         DateTime?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  creator     User     @relation("DebateCreator", fields: [creatorId], references: [id], onDelete: Cascade)
+  challenger  User?    @relation("DebateChallenger", fields: [challengerId], references: [id], onDelete: SetNull)
+  votes       DebateVote[]
+  
+  @@index([status])
+  @@map("debates")
+}
+
+model DebateVote {
+  id        String   @id @default(cuid())
+  debateId  String
+  userId    String
+  voteFor   String
+  
+  createdAt DateTime @default(now())
+  
+  debate Debate @relation(fields: [debateId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([debateId, userId])
+  @@map("debate_votes")
+}
+
+model DailyTask {
+  id          String   @id @default(cuid())
+  type        String
+  name        String
+  description String
+  reward      Int
+  requirement Int
+  isActive    Boolean  @default(true)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  userTasks UserDailyTask[]
+  
+  @@map("daily_tasks")
+}
+
+model UserDailyTask {
+  id        String   @id @default(cuid())
+  userId    String
+  taskId    String
+  progress  Int      @default(0)
+  completed Boolean  @default(false)
+  claimed   Boolean  @default(false)
+  date      DateTime
+  
+  createdAt DateTime @default(now())
+  
+  user User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  task DailyTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, taskId, date])
+  @@map("user_daily_tasks")
+}
+
+model Achievement {
+  id          String   @id @default(cuid())
+  type        String
+  name        String
+  description String
+  icon        String?
+  requirement Int
+  reward      Int
+  isActive    Boolean  @default(true)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  userAchievements UserAchievement[]
+  
+  @@map("achievements")
+}
+
+model UserAchievement {
+  id            String   @id @default(cuid())
+  userId        String
+  achievementId String
+  unlockedAt    DateTime @default(now())
+  
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievement Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, achievementId])
+  @@map("user_achievements")
+}
